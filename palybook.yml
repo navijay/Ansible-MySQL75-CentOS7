@@ -1,0 +1,5 @@
+---
+- hosts: common
+  become: true
+  roles:
+  - basic

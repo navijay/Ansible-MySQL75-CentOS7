@@ -1,0 +1,30 @@
+---
+- name: install the MySql rpm from a remote repo
+  yum:
+    name: http://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm
+    state: present
+- name: Install a list of packages
+  yum:
+    name:    
+    - mysql-community-server
+    - mysql-community-client
+    state: latest
+    service: name=mysqld state=started enabled=true
+    notify: restart mysql
+
+- name: Change mysql root password and keep track in 
+  shell: |
+    password_match=`awk '/A temporary password is generated for/ {a=$0} END{ print a }' /var/log/mysqld.log | awk '{print $(NF)}'`
+    echo $password_match
+    mysql -uroot -p$password_match --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'PassW0rd'; flush privileges; "
+    echo "[client]"
+    user=root
+    password=Asd@12345678 > /root/.my.cnf
+    args:
+      creates: /root/.my.cnf
+    register: change_temp_pass
+    notify: restart mysqld
+
+- meta: flush_handlers
+- debug:
+  var: change_temp_pass
